@@ -1,8 +1,9 @@
 use axum::{
     extract::Path,
+    http::StatusCode,
     response::Redirect,
     routing::{get, post},
-    Json, Router, http::StatusCode,
+    Json, Router,
 };
 use nanoid::nanoid;
 use serde::Deserialize;
@@ -55,7 +56,12 @@ async fn shorten_handler(
     Json(payload): Json<ShortenUrlPayload>,
     state: Arc<State>,
 ) -> Result<String, String> {
-    let mut links = state.links.write().map_err(|e| format!("{} Error with locks: {e}", StatusCode::INTERNAL_SERVER_ERROR))?;
+    let mut links = state.links.write().map_err(|e| {
+        format!(
+            "{} Error with locks: {e}",
+            StatusCode::INTERNAL_SERVER_ERROR
+        )
+    })?;
     let mut short_uuid;
     loop {
         short_uuid = nanoid!(7);
@@ -71,7 +77,12 @@ async fn shorten_handler(
 }
 
 async fn redirect_handler(path: Path<String>, state: Arc<State>) -> Result<Redirect, String> {
-    let links = state.links.write().map_err(|e| format!("{} Error with locks: {e}", StatusCode::INTERNAL_SERVER_ERROR))?;
+    let links = state.links.write().map_err(|e| {
+        format!(
+            "{} Error with locks: {e}",
+            StatusCode::INTERNAL_SERVER_ERROR
+        )
+    })?;
     if let Some(url) = links.get(&path.0) {
         Ok(Redirect::permanent(url))
     } else {
